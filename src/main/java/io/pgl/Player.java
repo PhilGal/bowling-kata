@@ -17,13 +17,26 @@ class Player implements Comparable<String> {
     currentFrame = nextFrame();
   }
 
-  public Score.Points bowl(Roll roll) {
+  /**
+   * Bowl-Roll a ball
+   * @param roll to bowl
+   * @return this player
+   */
+  public Player bowl(Roll roll) {
     this.currentFrame.addRoll(roll);
     score.update(currentFrame);
     if (!currentFrame.hasMoreRolls()) {
       this.currentFrame = nextFrame();
     }
-    return score.latest();
+    return this;
+  }
+
+  public boolean isFrameCompleted() {
+    return !currentFrame.hasPendingScore();
+  }
+
+  public boolean hasMoreRolls() {
+    return currentFrame.getFrameNumber() != Game.MAX_FRAMES || currentFrame.hasPendingScore();
   }
 
   public Score.Points getPoints() {
@@ -31,7 +44,7 @@ class Player implements Comparable<String> {
     return score.latest();
   }
 
-  public Frame nextFrame() {
+  private Frame nextFrame() {
     if (currentFrame != null && currentFrame.getScorePoints().isPresent() && currentFrame.getFrameNumber() == 10) {
       System.out.println("Game has been finished!");
       return currentFrame;

@@ -26,7 +26,7 @@ class LastFrameTest {
 
   @Test
   void lastFrameStrike_Has2MoreThrows() {
-    lastFrame.addRoll(Roll.ALL_PINS_HIT);
+    lastFrame.addRoll(Roll.STRIKE);
     assertTrue(lastFrame.isStrike());
     //two more throws in the last frames after the Strike
     assertTrue(lastFrame.hasMoreRolls());

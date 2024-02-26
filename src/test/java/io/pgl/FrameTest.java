@@ -18,7 +18,7 @@ class FrameTest {
 
   @Test
   void strike() {
-    frame.addRoll(Roll.ALL_PINS_HIT);
+    frame.addRoll(Roll.STRIKE);
     assertTrue(frame.isStrike());
     assertFalse(frame.isSpare());
     assertFalse(frame.hasMoreRolls());
@@ -49,7 +49,7 @@ class FrameTest {
   void cantHitMorePins() {
     frame.addRoll(new Roll(1));
     assertTrue(frame.hasMoreRolls());
-    final var allPinsHitThrow = Roll.ALL_PINS_HIT;
+    final var allPinsHitThrow = Roll.STRIKE;
     assertThrows(IllegalArgumentException.class, () -> frame.addRoll(allPinsHitThrow));
   }
 }

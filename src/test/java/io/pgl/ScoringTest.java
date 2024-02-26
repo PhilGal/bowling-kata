@@ -17,7 +17,7 @@ class ScoringTest {
   @Test
   void pointsAfterStrike() {
     // Frame 1 -> X
-    assertEquals(Score.Points.pending(), player.bowl(Roll.ALL_PINS_HIT));
+    assertEquals(Score.Points.pending(), player.bowl(Roll.STRIKE));
     // Frame 2 - 9
     player.bowl(new Roll(9));
     assertEquals(Score.Points.pending(), player.getPoints());
@@ -50,33 +50,33 @@ class ScoringTest {
   @Test
   void totalScore() {
     //Frame 1
-    player.bowl(new Roll(10));
-    //Frame 2
-    player.bowl(new Roll(7));
-    player.bowl(new Roll(3));
-    //Frame 3
-    player.bowl(new Roll(9));
-    player.bowl(new Roll(0));
-    //Frame 4
-    player.bowl(new Roll(10));
-    //Frame 5
-    player.bowl(new Roll(8));
-    player.bowl(new Roll(2));
-    //Frame 6
-    player.bowl(new Roll(0));
-    player.bowl(new Roll(0));
-    //Frame 7
-    player.bowl(new Roll(10));
-    //Frame 8
-    player.bowl(new Roll(8));
-    player.bowl(new Roll(0));
-    //Frame 9
-    player.bowl(new Roll(7));
-    player.bowl(new Roll(3));
-    //Frame 10
-    player.bowl(new Roll(10));
-    player.bowl(new Roll(9));
-    player.bowl(new Roll(1));
+    player.bowl(Roll.STRIKE)
+          //Frame 2
+          .bowl(new Roll(7))
+          .bowl(new Roll(3))
+          //Frame 3
+          .bowl(new Roll(9))
+          .bowl(new Roll(0))
+          //Frame 4
+          .bowl(Roll.STRIKE)
+          //Frame 5
+          .bowl(new Roll(8))
+          .bowl(new Roll(2))
+          //Frame 6
+          .bowl(new Roll(0))
+          .bowl(new Roll(0))
+          //Frame 7
+          .bowl(Roll.STRIKE)
+          //Frame 8
+          .bowl(new Roll(8))
+          .bowl(new Roll(0))
+          //Frame 9
+          .bowl(new Roll(7))
+          .bowl(new Roll(3))
+          //Frame 10
+          .bowl(Roll.STRIKE)
+          .bowl(new Roll(9))
+          .bowl(new Roll(1));
 
     assertEquals(Score.Points.of(144), player.getPoints());
 
@@ -84,8 +84,8 @@ class ScoringTest {
 
   @Test
   void allStrikes() {
-    for (int i = 0; i < 12; i++) {
-      player.bowl(new Roll(10));
+    while (player.hasMoreRolls()) {
+      player.bowl(Roll.STRIKE);
     }
     assertEquals(Score.Points.of(300), player.getPoints());
   }
