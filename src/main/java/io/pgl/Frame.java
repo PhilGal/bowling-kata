@@ -1,20 +1,20 @@
 package io.pgl;
 
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class Frame implements Comparable<Frame> {
 
   private final int frameNumber;
-  private final LinkedList<Throw> madeThrows = new LinkedList<>();
-
+  private final List<Roll> rolls = new ArrayList<>(3);
   private int pinsLeft = Game.MAX_PINS;
   private boolean strike;
   private boolean spare;
 
-  private Score.FramePoint score = Score.FramePoint.pending();
+  private Score.Points score = Score.Points.pending();
 
   public Frame(int frameNumber) {
     if (frameNumber > Game.MAX_FRAMES) {
@@ -23,28 +23,28 @@ public class Frame implements Comparable<Frame> {
     this.frameNumber = frameNumber;
   }
 
-  void addThrow(Throw ballThrow) {
-    if (!isLastFrame() && countThrows() == 2 || isLastFrame() && (isStrike() || isSpare()) && countThrows() == 3) {
+  void addRoll(Roll ballRoll) {
+    if (!isLastFrame() && countRolls() == 2 || isLastFrame() && (isStrike() || isSpare()) && countRolls() == 3) {
       throw new IllegalStateException("Too many throws");
     }
-    if (!isLastFrame() && totalPinsHit() + ballThrow.pinsHit() > Game.MAX_PINS) {
+    if (!isLastFrame() && totalPinsHit() + ballRoll.pinsHit() > Game.MAX_PINS) {
       throw new IllegalArgumentException("Too many pins hit @_@");
     }
 
-    this.madeThrows.add(ballThrow);
-    this.pinsLeft -= ballThrow.pinsHit();
+    this.rolls.add(ballRoll);
+    this.pinsLeft -= ballRoll.pinsHit();
     // all pins hit
     if (!isOpen()) {
-      this.strike = countThrows() == 1;
-      this.spare = countThrows() == 2;
+      this.strike = countRolls() == 1;
+      this.spare = countRolls() == 2;
     }
   }
 
-  public boolean hasMoreThrows() {
+  public boolean hasMoreRolls() {
     if (!isLastFrame()) {
-      return !(isStrike() || isSpare()) && isOpen() && countThrows() < 2;
+      return !(isStrike() || isSpare()) && isOpen() && countRolls() < 2;
     } else {
-      return (isOpen() && countThrows() < 2) || (isSpare() || isStrike()) && countThrows() < 3;
+      return (isOpen() && countRolls() < 2) || (isSpare() || isStrike()) && countRolls() < 3;
     }
   }
 
@@ -58,8 +58,8 @@ public class Frame implements Comparable<Frame> {
 
   public int totalPinsHit() {
     int result = 0;
-    for (Throw madeThrow : madeThrows) {
-      result += madeThrow.pinsHit();
+    for (Roll roll : rolls) {
+      result += roll.pinsHit();
     }
     return result;
   }
@@ -68,31 +68,31 @@ public class Frame implements Comparable<Frame> {
     return frameNumber;
   }
 
-  public List<Throw> getThrows() {
-    return madeThrows;
+  public List<Roll> getRolls() {
+    return rolls;
   }
 
-  public int countThrows() {
-    return madeThrows.size();
+  public int countRolls() {
+    return rolls.size();
   }
 
-  public Score.FramePoint getScore() {
-    return score;
+  public Optional<Integer> getScorePoints() {
+    return score.value();
   }
 
   public boolean hasPendingScore() {
-    return score instanceof Score.PendingPoint;
+    return getScorePoints().isEmpty();
   }
 
   public boolean isPending() {
-    if ( frameNumber != Game.MAX_FRAMES) {
-      return isSpare() || isStrike() || hasMoreThrows();
+    if (frameNumber != Game.MAX_FRAMES) {
+      return isSpare() || isStrike() || hasMoreRolls();
     } else {
-      return hasMoreThrows();
+      return hasMoreRolls();
     }
   }
 
-  public void setScore(Score.FramePoint score) {
+  public void setScore(Score.Points score) {
     this.score = score;
   }
 
@@ -108,7 +108,7 @@ public class Frame implements Comparable<Frame> {
   public String toString() {
     return "Frame{" +
         "frameNumber=" + frameNumber +
-        ", madeThrows=" + madeThrows +
+        ", madeThrows=" + rolls +
         '}';
   }
 

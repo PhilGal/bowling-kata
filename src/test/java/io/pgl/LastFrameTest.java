@@ -14,43 +14,43 @@ class LastFrameTest {
   @BeforeEach
   void setUp() {
     lastFrame = new Frame(Game.MAX_FRAMES);
-    assertTrue(lastFrame.hasMoreThrows());
+    assertTrue(lastFrame.hasMoreRolls());
   }
 
   @Test
   void lastFrameNormal() {
-    lastFrame.addThrow(new Throw(0));
-    lastFrame.addThrow(new Throw(3));
-    assertFalse(lastFrame.hasMoreThrows());
+    lastFrame.addRoll(new Roll(0));
+    lastFrame.addRoll(new Roll(3));
+    assertFalse(lastFrame.hasMoreRolls());
   }
 
   @Test
   void lastFrameStrike_Has2MoreThrows() {
-    lastFrame.addThrow(Throw.ALL_PINS_HIT);
+    lastFrame.addRoll(Roll.ALL_PINS_HIT);
     assertTrue(lastFrame.isStrike());
     //two more throws in the last frames after the Strike
-    assertTrue(lastFrame.hasMoreThrows());
-    lastFrame.addThrow(new Throw(3));
-    lastFrame.addThrow(new Throw(5));
+    assertTrue(lastFrame.hasMoreRolls());
+    lastFrame.addRoll(new Roll(3));
+    lastFrame.addRoll(new Roll(5));
     assertNoMoreThrows();
   }
 
   @Test
   void lastFrameSpare_Has1MoreThrow() {
-    final var halfPinsHitThrow = new Throw(Game.MAX_PINS / 2);
-    lastFrame.addThrow(halfPinsHitThrow);
-    lastFrame.addThrow(halfPinsHitThrow);
+    final var halfPinsHitRoll = new Roll(Game.MAX_PINS / 2);
+    lastFrame.addRoll(halfPinsHitRoll);
+    lastFrame.addRoll(halfPinsHitRoll);
     assertFalse(lastFrame.isStrike());
     assertTrue(lastFrame.isSpare());
     //one more throw in the last frame after the Spare
-    assertTrue(lastFrame.hasMoreThrows());
-    lastFrame.addThrow(halfPinsHitThrow);
+    assertTrue(lastFrame.hasMoreRolls());
+    lastFrame.addRoll(halfPinsHitRoll);
     assertNoMoreThrows();
   }
 
   private void assertNoMoreThrows() {
-    assertFalse(lastFrame.hasMoreThrows());
-    final var illegalBallThrow = new Throw(1);
-    assertThrows(IllegalStateException.class, () -> lastFrame.addThrow(illegalBallThrow));
+    assertFalse(lastFrame.hasMoreRolls());
+    final var illegalBallRoll = new Roll(1);
+    assertThrows(IllegalStateException.class, () -> lastFrame.addRoll(illegalBallRoll));
   }
 }

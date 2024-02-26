@@ -18,38 +18,38 @@ class FrameTest {
 
   @Test
   void strike() {
-    frame.addThrow(Throw.ALL_PINS_HIT);
+    frame.addRoll(Roll.ALL_PINS_HIT);
     assertTrue(frame.isStrike());
     assertFalse(frame.isSpare());
-    assertFalse(frame.hasMoreThrows());
+    assertFalse(frame.hasMoreRolls());
     System.out.println(frame);
   }
 
   @Test
   void spare() {
-    frame.addThrow(new Throw(1));
-    frame.addThrow(new Throw(9));
+    frame.addRoll(new Roll(1));
+    frame.addRoll(new Roll(9));
     assertFalse(frame.isStrike());
     assertTrue(frame.isSpare());
-    assertFalse(frame.hasMoreThrows());
+    assertFalse(frame.hasMoreRolls());
     System.out.println(frame);
   }
 
   @Test
   void cantDoMoreThrows() {
-    final var oneHitBallThrow = new Throw(1);
-    frame.addThrow(oneHitBallThrow);
-    assertTrue(frame.hasMoreThrows());
-    frame.addThrow(oneHitBallThrow);
-    assertFalse(frame.hasMoreThrows());
-    assertThrows(IllegalStateException.class, () -> frame.addThrow(oneHitBallThrow));
+    final var oneHitBallThrow = new Roll(1);
+    frame.addRoll(oneHitBallThrow);
+    assertTrue(frame.hasMoreRolls());
+    frame.addRoll(oneHitBallThrow);
+    assertFalse(frame.hasMoreRolls());
+    assertThrows(IllegalStateException.class, () -> frame.addRoll(oneHitBallThrow));
   }
 
   @Test
   void cantHitMorePins() {
-    frame.addThrow(new Throw(1));
-    assertTrue(frame.hasMoreThrows());
-    final var allPinsHitThrow = Throw.ALL_PINS_HIT;
-    assertThrows(IllegalArgumentException.class, () -> frame.addThrow(allPinsHitThrow));
+    frame.addRoll(new Roll(1));
+    assertTrue(frame.hasMoreRolls());
+    final var allPinsHitThrow = Roll.ALL_PINS_HIT;
+    assertThrows(IllegalArgumentException.class, () -> frame.addRoll(allPinsHitThrow));
   }
 }

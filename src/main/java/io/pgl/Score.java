@@ -2,33 +2,31 @@ package io.pgl;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class Score {
 
-  private ValuePoint lastValuePoint = FramePoint.value(0);
-  private final Map<Integer, Frame> frames = new TreeMap<>(Comparator.naturalOrder());
-  private final Set<Integer> pendingFramesIndices = new TreeSet<>(Comparator.naturalOrder());
+  private Points latestPoint = Points.pending();
+  private final TreeMap<Integer, Frame> frames = new TreeMap<>(Comparator.naturalOrder());
+  private final TreeSet<Integer> pendingFramesIndices = new TreeSet<>(Comparator.naturalOrder());
 
   public void update(Frame frame) {
-    //>>> this is needed still, but better
-    final var frameNumber = frame.getFrameNumber();
-    final var frameIndex = frameNumber - 1;
+    final var frameIndex = frame.getFrameNumber() - 1;
     frames.put(frameIndex, frame);
     final var isPending = frame.isPending();
     if (isPending) {
-      frame.setScore(FramePoint.pending());
+      frame.setScore(Points.pending());
       pendingFramesIndices.add(frameIndex);
     }
     updatePendingFrames(frame);
     if (!isPending && frame.hasPendingScore()) {
-      lastValuePoint = FramePoint.value(lastValuePoint.value() + frame.totalPinsHit());
-      frame.setScore(lastValuePoint);
+      latestPoint = Points.of(latestPoint.getRawValue() + frame.totalPinsHit());
+      frame.setScore(latestPoint);
     }
-    System.out.println(frames.values().stream().map(Frame::getScore).toList());
+    System.out.println(frames.values().stream().map(Frame::getScorePoints).toList());
   }
 
   private void updatePendingFrames(Frame frame) {
@@ -37,87 +35,86 @@ public class Score {
     }
     for (Integer pendingFramesIndex : pendingFramesIndices) {
       Frame pendingFrame = frames.get(pendingFramesIndex);
-      List<Throw> lastTwoThrows = frames.values().stream()
-                                        .filter(f -> f.getFrameNumber() > pendingFrame.getFrameNumber())
-                                        .flatMap(f -> f.getThrows().stream())
-                                        .limit(2)
-                                        .toList();
+      List<Roll> lastTwoRolls = frames.values().stream()
+                                      .filter(f -> f.getFrameNumber() > pendingFrame.getFrameNumber())
+                                      .flatMap(f -> f.getRolls().stream())
+                                      .limit(2)
+                                      .toList();
       if (!pendingFrame.hasPendingScore()) {
         continue;
       }
-      if (pendingFrame.isSpare() && lastTwoThrows.size() == 1) {
-        updatePendingScore(pendingFramesIndex, lastTwoThrows.get(0).pinsHit(), pendingFrame);
-      } else if (pendingFrame.isStrike() && lastTwoThrows.size() == 2) {
-        updatePendingScore(pendingFramesIndex, lastTwoThrows.get(0).pinsHit() + lastTwoThrows.get(1).pinsHit(), pendingFrame);
+      if (pendingFrame.isSpare() && lastTwoRolls.size() == 1) {
+        updatePendingScore(pendingFramesIndex, lastTwoRolls.get(0).pinsHit(), pendingFrame);
+      } else if (pendingFrame.isStrike() && lastTwoRolls.size() == 2) {
+        updatePendingScore(pendingFramesIndex, lastTwoRolls.get(0).pinsHit() + lastTwoRolls.get(1).pinsHit(), pendingFrame);
       }
-
     }
-    pendingFramesIndices.removeIf(idx -> frames.get(idx).getScore() instanceof ValuePoint);
+    pendingFramesIndices.removeIf(idx -> frames.get(idx).getScorePoints().isPresent());
   }
 
   private void updatePendingScore(Integer pendingFramesIndex, int totalPinsHit, Frame pendingFrame) {
     final var score = getPrevValue(pendingFramesIndex);
-    final var valuePoint = FramePoint.value(score + totalPinsHit);
+    final var valuePoint = Points.of(score + totalPinsHit);
     pendingFrame.setScore(valuePoint);
-    lastValuePoint = valuePoint;
+    latestPoint = valuePoint;
   }
 
   private int getPrevValue(Integer pendingFramesIndex) {
     int prevValue;
     if (pendingFramesIndex >= 1) {
-      prevValue = ((ValuePoint) frames.get(pendingFramesIndex - 1).getScore()).value();
+      prevValue = frames.get(pendingFramesIndex - 1).getScorePoints().orElseThrow();
     } else {
       prevValue = 0;
     }
     return pendingFramesIndex == 9 ? prevValue : prevValue + 10;
   }
 
-  public FramePoint getPoints() {
-    return frames.values().stream().map(Frame::getScore)
-                 .max(Comparator.naturalOrder())
-                 .orElseGet(FramePoint::pending);
-
+  public Points latest() {
+    return latestPoint;
   }
 
   @Override
   public String toString() {
     return "Score{" +
-        "points =" + lastValuePoint.value() +
-        ", pointsPerFrame=" + frames.values().stream().map(Frame::getScore).toList() +
+        "points =" + latestPoint.value() +
+        ", pointsPerFrame=" + frames.values().stream().map(Frame::getScorePoints).toList() +
         '}';
   }
 
-  public interface FramePoint extends Comparable<FramePoint> {
-
-    PendingPoint PENDING_PONT = new PendingPoint();
-
-    static PendingPoint pending() {
-      return PENDING_PONT;
-    }
-
-    static ValuePoint value(int value) {
-      return new ValuePoint(value);
+  public void prettyPrint() {
+    System.out.println("Bowling Frames Table:");
+    System.out.println("Frame\t\tRoll 1\tRoll 2");
+    System.out.println("-----------------------------");
+    for (Frame frame : frames.values()) {
+      final var rolls = frame.getRolls();
+      System.out.printf("%d\t\t%s\t%s%n", frame.getFrameNumber(), rolls.size() > 1 ? rolls.get(0).pinsHit() : " ", rolls.size() > 2 ? rolls.get(1).pinsHit() : " ");
     }
   }
 
-  public static class PendingPoint implements FramePoint {
+  public static class Points implements Comparable<Points> {
 
-    @Override
-    public String toString() {
-      return "Pending";
+    private static final Points PENDING = new Points(null);
+
+    private final Integer value;
+
+    private Points(Integer value) {
+      this.value = value;
     }
 
-    @Override
-    public int compareTo(FramePoint o) {
-      return -1;
+    public static Points pending() {
+      return PENDING;
     }
-  }
 
-  public record ValuePoint(int value) implements FramePoint, Comparable<FramePoint> {
+    public static Points of(Integer value) {
+      return new Points(value);
+    }
 
-    @Override
-    public String toString() {
-      return String.valueOf(value);
+    public Optional<Integer> value() {
+      return Optional.ofNullable(value);
+    }
+
+    private Integer getRawValue() {
+      return value;
     }
 
     @Override
@@ -128,16 +125,19 @@ public class Score {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      ValuePoint that = (ValuePoint) o;
-      return value == that.value;
+      Points points = (Points) o;
+      return Objects.equals(value, points.value);
     }
 
     @Override
-    public int compareTo(FramePoint o) {
-      if (o instanceof PendingPoint) {
-        return 1;
-      }
-      return Comparator.comparingInt(ValuePoint::value).compare(this, (ValuePoint) o);
+    public int hashCode() {
+      return Objects.hash(value);
+    }
+
+    @Override
+    public int compareTo(Points o) {
+      return Comparator.nullsFirst(Comparator.comparingInt(Points::getRawValue))
+                       .compare(this, o);
     }
   }
 }

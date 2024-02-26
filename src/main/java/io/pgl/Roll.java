@@ -1,10 +1,10 @@
 package io.pgl;
 
-public record Throw(int pinsHit) {
+public record Roll(int pinsHit) {
 
-  public static final Throw ALL_PINS_HIT = new Throw(Game.MAX_PINS);
+  public static final Roll ALL_PINS_HIT = new Roll(Game.MAX_PINS);
 
-  public Throw {
+  public Roll {
     if (pinsHit < 0 || pinsHit > Game.MAX_PINS) {
       throw new IllegalArgumentException("invalid number of pins: " + pinsHit);
     }
