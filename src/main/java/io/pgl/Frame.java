@@ -6,17 +6,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class Frame implements Comparable<Frame> {
+class Frame implements Comparable<Frame> {
 
   private final int frameNumber;
   private final List<Roll> rolls = new ArrayList<>(3);
   private int pinsLeft = Game.MAX_PINS;
   private boolean strike;
   private boolean spare;
-
   private Score.Points score = Score.Points.pending();
 
-  public Frame(int frameNumber) {
+  Frame(int frameNumber) {
     if (frameNumber > Game.MAX_FRAMES) {
       throw new IllegalArgumentException("Too many frames");
     }
@@ -34,29 +33,29 @@ public class Frame implements Comparable<Frame> {
     this.rolls.add(ballRoll);
     this.pinsLeft -= ballRoll.pinsHit();
     // all pins hit
-    if (!isOpen()) {
+    if (!hasPinsLeft()) {
       this.strike = countRolls() == 1;
       this.spare = countRolls() == 2;
     }
   }
 
-  public boolean hasMoreRolls() {
+  boolean hasMoreRolls() {
     if (!isLastFrame()) {
-      return !(isStrike() || isSpare()) && isOpen() && countRolls() < 2;
+      return !(isStrike() || isSpare()) && hasPinsLeft() && countRolls() < 2;
     } else {
-      return (isOpen() && countRolls() < 2) || (isSpare() || isStrike()) && countRolls() < 3;
+      return (hasPinsLeft() && countRolls() < 2) || (isSpare() || isStrike()) && countRolls() < 3;
     }
   }
 
-  public boolean isSpare() {
+  boolean isSpare() {
     return spare;
   }
 
-  public boolean isStrike() {
+  boolean isStrike() {
     return strike;
   }
 
-  public int totalPinsHit() {
+  int totalPinsHit() {
     int result = 0;
     for (Roll roll : rolls) {
       result += roll.pinsHit();
@@ -64,27 +63,27 @@ public class Frame implements Comparable<Frame> {
     return result;
   }
 
-  public int getFrameNumber() {
+  int getFrameNumber() {
     return frameNumber;
   }
 
-  public List<Roll> getRolls() {
+  List<Roll> getRolls() {
     return rolls;
   }
 
-  public int countRolls() {
+  int countRolls() {
     return rolls.size();
   }
 
-  public Optional<Integer> getScorePoints() {
+  Optional<Integer> getScorePoints() {
     return score.value();
   }
 
-  public boolean hasPendingScore() {
+  boolean hasPendingScore() {
     return getScorePoints().isEmpty();
   }
 
-  public boolean isPending() {
+  boolean hasOpenScore() {
     if (frameNumber != Game.MAX_FRAMES) {
       return isSpare() || isStrike() || hasMoreRolls();
     } else {
@@ -92,11 +91,11 @@ public class Frame implements Comparable<Frame> {
     }
   }
 
-  public void setScore(Score.Points score) {
+  void setScore(Score.Points score) {
     this.score = score;
   }
 
-  private boolean isOpen() {
+  private boolean hasPinsLeft() {
     return pinsLeft != 0;
   }
 

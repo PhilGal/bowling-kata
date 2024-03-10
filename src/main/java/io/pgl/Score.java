@@ -1,32 +1,30 @@
 package io.pgl;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Score {
 
   private Points latestPoint = Points.pending();
-  private final TreeMap<Integer, Frame> frames = new TreeMap<>(Comparator.naturalOrder());
+  private final List<Frame> frames;
   private final TreeSet<Integer> pendingFramesIndices = new TreeSet<>(Comparator.naturalOrder());
+
+  public Score(List<Frame> frames) {
+    this.frames = frames;
+  }
 
   public void update(Frame frame) {
     final var frameIndex = frame.getFrameNumber() - 1;
-    frames.put(frameIndex, frame);
-    final var isPending = frame.isPending();
-    if (isPending) {
+    final var hasOpenScore = frame.hasOpenScore();
+    if (hasOpenScore) {
       frame.setScore(Points.pending());
       pendingFramesIndices.add(frameIndex);
     }
     updatePendingFrames(frame);
-    if (!isPending && frame.hasPendingScore()) {
-      latestPoint = Points.of(latestPoint.getRawValue() + frame.totalPinsHit());
+    if (!hasOpenScore && frame.hasPendingScore()) {
+      latestPoint = Points.of(latestPoint.value().orElse(0) + frame.totalPinsHit());
       frame.setScore(latestPoint);
     }
-    System.out.println(frames.values().stream().map(Frame::getScorePoints).toList());
+    System.out.println(frames.stream().map(Frame::getScorePoints).toList());
   }
 
   private void updatePendingFrames(Frame frame) {
@@ -35,7 +33,7 @@ public class Score {
     }
     for (Integer pendingFramesIndex : pendingFramesIndices) {
       Frame pendingFrame = frames.get(pendingFramesIndex);
-      List<Roll> lastTwoRolls = frames.values().stream()
+      List<Roll> lastTwoRolls = frames.stream()
                                       .filter(f -> f.getFrameNumber() > pendingFrame.getFrameNumber())
                                       .flatMap(f -> f.getRolls().stream())
                                       .limit(2)
@@ -44,7 +42,7 @@ public class Score {
         continue;
       }
       if (pendingFrame.isSpare() && lastTwoRolls.size() == 1) {
-        updatePendingScore(pendingFramesIndex, lastTwoRolls.get(0).pinsHit(), pendingFrame);
+        updatePendingScore(pendingFramesIndex, lastTwoRolls.getFirst().pinsHit(), pendingFrame);
       } else if (pendingFrame.isStrike() && lastTwoRolls.size() == 2) {
         updatePendingScore(pendingFramesIndex, lastTwoRolls.get(0).pinsHit() + lastTwoRolls.get(1).pinsHit(), pendingFrame);
       }
@@ -77,7 +75,7 @@ public class Score {
   public String toString() {
     return "Score{" +
         "points =" + latestPoint.value() +
-        ", pointsPerFrame=" + frames.values().stream().map(Frame::getScorePoints).toList() +
+        ", pointsPerFrame=" + frames.stream().map(Frame::getScorePoints).toList() +
         '}';
   }
 
@@ -85,7 +83,7 @@ public class Score {
     System.out.println("Bowling Frames Table:");
     System.out.println("Frame\t\tRoll 1\tRoll 2");
     System.out.println("-----------------------------");
-    for (Frame frame : frames.values()) {
+    for (Frame frame : frames) {
       final var rolls = frame.getRolls();
       System.out.printf("%d\t\t%s\t%s%n", frame.getFrameNumber(), rolls.size() > 1 ? rolls.get(0).pinsHit() : " ", rolls.size() > 2 ? rolls.get(1).pinsHit() : " ");
     }

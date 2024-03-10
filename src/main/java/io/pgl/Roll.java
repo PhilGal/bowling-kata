@@ -1,10 +1,11 @@
 package io.pgl;
 
-public record Roll(int pinsHit) {
+record Roll(int pinsHit) {
 
   public static final Roll STRIKE = new Roll(Game.MAX_PINS);
 
   public Roll {
+    System.out.println(pinsHit + " pins hit!");
     if (pinsHit < 0 || pinsHit > Game.MAX_PINS) {
       throw new IllegalArgumentException("invalid number of pins: " + pinsHit);
     }

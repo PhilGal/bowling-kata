@@ -7,14 +7,14 @@ import java.util.Objects;
 
 class Player implements Comparable<String> {
 
-  private final String name;
   private final List<Frame> frames = new ArrayList<>(10);
-  private Frame currentFrame;
-  private final Score score = new Score();
+  private final Score score = new Score(frames);
+  private final String name;
+  private int currentFrameIdx;
 
   public Player(String name) {
     this.name = name;
-    currentFrame = nextFrame();
+    currentFrameIdx = nextFrame();
   }
 
   /**
@@ -23,20 +23,17 @@ class Player implements Comparable<String> {
    * @return this player
    */
   public Player bowl(Roll roll) {
-    this.currentFrame.addRoll(roll);
+    final var currentFrame = currentFrame();
+    currentFrame.addRoll(roll);
     score.update(currentFrame);
     if (!currentFrame.hasMoreRolls()) {
-      this.currentFrame = nextFrame();
+      this.currentFrameIdx = nextFrame();
     }
     return this;
   }
 
-  public boolean isFrameCompleted() {
-    return !currentFrame.hasPendingScore();
-  }
-
   public boolean hasMoreRolls() {
-    return currentFrame.getFrameNumber() != Game.MAX_FRAMES || currentFrame.hasPendingScore();
+    return currentFrame().getFrameNumber() != Game.MAX_FRAMES || currentFrame().hasPendingScore();
   }
 
   public Score.Points getPoints() {
@@ -44,14 +41,18 @@ class Player implements Comparable<String> {
     return score.latest();
   }
 
-  private Frame nextFrame() {
-    if (currentFrame != null && currentFrame.getScorePoints().isPresent() && currentFrame.getFrameNumber() == 10) {
+  private int nextFrame() {
+    if (frames.size() == Game.MAX_FRAMES && currentFrame().getScorePoints().isPresent()) {
       System.out.println("Game has been finished!");
-      return currentFrame;
+      return currentFrameIdx;
     }
     final var frame = new Frame(frames.size() + 1);
     frames.add(frame);
-    return frame;
+    return frames.size() - 1;
+  }
+
+  private Frame currentFrame() {
+    return frames.get(currentFrameIdx);
   }
 
   @Override
